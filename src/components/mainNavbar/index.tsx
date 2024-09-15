@@ -1,14 +1,6 @@
 import { FunctionComponent } from 'react';
 import Link from 'next/link';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileMenu } from '@/components/profileMenu';
 
 export const MainNavbar: FunctionComponent = () => {
   return (
@@ -17,23 +9,7 @@ export const MainNavbar: FunctionComponent = () => {
         <Link href="/home">
           <span className="text-3xl font-semibold">Тудушлёп</span>
         </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Avatar>
-              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Мой аккаунт</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <Link href={'/profile'} legacyBehavior>
-              <DropdownMenuItem>Профиль</DropdownMenuItem>
-            </Link>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Выйти</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ProfileMenu></ProfileMenu>
       </nav>
     </div>
   );
