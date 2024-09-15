@@ -21,6 +21,7 @@ import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store';
+import { SERVER_IP } from '@/app/config';
 
 const assignees = [
   { label: 'John Doe', value: '1' },
@@ -59,13 +60,9 @@ async function createTask(data: TaskFormData, token: string) {
   params.append('reminder', data.reminder?.toISOString() ?? '');
   params.append('attendant_id', data.attendant);
   params.append('xp', '10');
-  const response = await axios.post(
-    'http://25.59.7.150:8000/tasks/create_task',
-    params,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const response = await axios.post(`${SERVER_IP}/tasks/create_task`, params, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return response.data;
 }
 

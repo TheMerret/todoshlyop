@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/store';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SERVER_IP } from '@/app/config';
 
 interface LoginFormData {
   username: string;
@@ -33,10 +34,7 @@ async function loginRequest(data: LoginFormData): Promise<LoginResponse> {
   const params = new URLSearchParams();
   params.append('username', data.username);
   params.append('password', data.password);
-  const response = await axios.post(
-    'http://25.59.7.150:8000/auth/login?',
-    params
-  );
+  const response = await axios.post(`${SERVER_IP}/auth/login?`, params);
   return response.data;
 }
 

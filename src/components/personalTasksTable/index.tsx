@@ -5,6 +5,7 @@ import { Task, TasksTable } from '../tasksTable';
 import axios from 'axios';
 import { useAuthStore } from '@/store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { SERVER_IP } from '@/app/config';
 
 interface PersonalTasksResponse {
   body: {
@@ -16,7 +17,7 @@ interface PersonalTasksResponse {
 }
 
 async function getTasks(token: string): Promise<PersonalTasksResponse> {
-  const response = await axios.get('http://25.59.7.150:8000/tasks?page=1', {
+  const response = await axios.get(`${SERVER_IP}/tasks?page=1`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;

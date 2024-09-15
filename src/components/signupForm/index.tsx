@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { SERVER_IP } from '@/app/config';
 
 interface SignUpFormData {
   email: string;
@@ -36,10 +37,7 @@ async function signUpRequest(data: SignUpFormData): Promise<SignUpResponse> {
   params.append('username', data.username);
   params.append('password', data.password);
   params.append('repeat_password', data.repeat_password);
-  const response = await axios.post(
-    'http://25.59.7.150:8000/auth/register?',
-    params
-  );
+  const response = await axios.post(`${SERVER_IP}/auth/register?`, params);
   return response.data;
 }
 
