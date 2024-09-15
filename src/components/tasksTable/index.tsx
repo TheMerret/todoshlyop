@@ -12,62 +12,28 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 
-type Task = {
-  id: string;
+export interface Task {
+  id: number;
   title: string;
-  status: 'done' | 'reject';
-  assignee: string;
-  reminderDate: string;
-  priority: 'low' | 'medium' | 'high';
-};
+  description?: string;
+  task_status: 'planning' | 'done' | 'rejected';
+  task_importance: number;
+  reminder?: string;
+  attendant: string;
+  xp?: number;
+}
 
-const mockData: Task[] = [
-  {
-    id: '001',
-    title: 'Complete project proposal',
-    status: 'done',
-    assignee: 'John Doe',
-    reminderDate: '2023-06-15',
-    priority: 'high',
-  },
-  {
-    id: '002',
-    title: 'Review code changes',
-    status: 'reject',
-    assignee: 'Jane Smith',
-    reminderDate: '2023-06-16',
-    priority: 'medium',
-  },
-  {
-    id: '003',
-    title: 'Update documentation',
-    status: 'done',
-    assignee: 'Bob Johnson',
-    reminderDate: '2023-06-17',
-    priority: 'low',
-  },
-  {
-    id: '004',
-    title: 'Prepare presentation',
-    status: 'done',
-    assignee: 'Alice Brown',
-    reminderDate: '2023-06-18',
-    priority: 'high',
-  },
-  {
-    id: '005',
-    title: 'Fix bug in login module',
-    status: 'reject',
-    assignee: 'Charlie Wilson',
-    reminderDate: '2023-06-19',
-    priority: 'medium',
-  },
-];
+interface TasksTableProps {
+  tasks: Task[];
+  checkCallback?: (taskId: Task['id'], state: boolean) => void;
+}
 
-export const TasksTable: FC = function () {
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-
-  const toggleTaskSelection = (taskId: string) => {
+export const TasksTable: FC<TasksTableProps> = function ({
+  tasks,
+  checkCallback,
+}) {
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const toggleTaskSelection = (taskId: number) => {
     setSelectedTasks((prev) =>
       prev.includes(taskId)
         ? prev.filter((id) => id !== taskId)
@@ -75,7 +41,7 @@ export const TasksTable: FC = function () {
     );
   };
 
-  const isTaskSelected = (taskId: string) => selectedTasks.includes(taskId);
+  const isTaskSelected = (taskId: number) => selectedTasks.includes(taskId);
 
   return (
     <div className="container rounded-md border">
@@ -88,16 +54,19 @@ export const TasksTable: FC = function () {
             <TableHead>Статус</TableHead>
             <TableHead>Ответственный</TableHead>
             <TableHead></TableHead>
-            <TableHead>Priority</TableHead>
+            <TableHead>Приоритет</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockData.map((task) => (
+          {tasks.map((task) => (
             <TableRow key={task.id}>
               <TableCell>
                 <Checkbox
                   checked={isTaskSelected(task.id)}
-                  onCheckedChange={() => toggleTaskSelection(task.id)}
+                  onCheckedChange={(state) => {
+                    toggleTaskSelection(task.id);
+                    checkCallback?.(task.id, Boolean(state.valueOf()));
+                  }}
                 />
               </TableCell>
               <TableCell>{task.id}</TableCell>
@@ -105,25 +74,25 @@ export const TasksTable: FC = function () {
               <TableCell>
                 <Badge
                   variant={
-                    task.status === 'done' ? 'secondary' : 'destructive'
+                    task.task_status === 'done' ? 'secondary' : 'destructive'
                   }
                 >
-                  {task.status}
+                  {task.task_status}
                 </Badge>
               </TableCell>
-              <TableCell>{task.assignee}</TableCell>
-              <TableCell>{task.reminderDate}</TableCell>
+              <TableCell>{task.attendant}</TableCell>
+              <TableCell>{task.reminder ?? ''}</TableCell>
               <TableCell>
                 <Badge
                   variant={
-                    task.priority === 'high'
+                    task.task_importance === 3
                       ? 'destructive'
-                      : task.priority === 'medium'
+                      : task.task_importance === 2
                         ? 'outline'
                         : 'secondary'
                   }
                 >
-                  {task.priority}
+                  {task.task_importance}
                 </Badge>
               </TableCell>
             </TableRow>

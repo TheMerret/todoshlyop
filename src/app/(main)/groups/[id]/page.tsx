@@ -26,7 +26,7 @@ export default function Group({ params }: GroupParams) {
         </TabsList>
         <div className="flex flex-wrap justify-between"></div>
         <TabsContent value="tasks">
-          <TasksTable></TasksTable>
+          <TasksTable tasks={[]}></TasksTable>
         </TabsContent>
         <TabsContent value="admin">
           <GroupAdminDashboard></GroupAdminDashboard>
