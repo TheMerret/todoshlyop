@@ -17,82 +17,22 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store';
-import { SERVER_IP } from '@/app/config';
+import { useCreateTask } from '@/queries/tasks/hooks';
+import { TaskForm as TaskFormSchema } from '@/queries/api.schemas';
 
-const assignees = [
-  { label: 'John Doe', value: '1' },
-  { label: 'Jane Smith', value: '2' },
-  { label: 'Bob Johnson', value: '3' },
-];
-
-const statuses = [
-  { label: 'Open', value: 'planning' },
-  { label: 'Done', value: 'done' },
-  { label: 'Rejected', value: 'cancelled' },
-] as const;
-
-const priorities = [
-  { label: 'Low', value: '1' },
-  { label: 'Medium', value: '2' },
-  { label: 'High', value: '3' },
-];
-
-interface TaskFormData {
-  title: string;
-  description?: string;
-  task_status: 'planning' | 'done' | 'cancelled' | 'running';
-  task_importance: string;
-  reminder: Date;
-  attendant: string;
-}
-
-async function createTask(data: TaskFormData, token: string) {
-  const params = new URLSearchParams();
-  params.append('title', data.title);
-  params.append('team_id', 'null');
-  params.append('description', data.description ?? '');
-  params.append('task_status', data.task_status);
-  params.append('task_importance', String(data.task_importance));
-  params.append('reminder', data.reminder?.toISOString() ?? '');
-  params.append('attendant_id', data.attendant);
-  params.append('xp', '10');
-  const response = await axios.post(`${SERVER_IP}/tasks/create_task`, params, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
-}
 
 export const TaskForm: FC = function () {
-  const { register, handleSubmit, setValue } = useForm<TaskFormData>();
-  const [title, setTitle] = useState('Task Title');
-  const [description, setDescription] = useState(
-    '# Task Description\n\nThis is a markdown description of the task.'
-  );
-  const [isEditing, setIsEditing] = useState(false);
-  const [assignee, setAssignee] = useState(assignees[0]);
-  const [reminder, setReminder] = useState<Date>(new Date());
-  const [status, setStatus] = useState<'planning' | 'done' | 'cancelled'>(
-    'planning'
-  );
-  const [priority, setPriority] = useState('1');
+  const { register, handleSubmit, setValue, watch } = useForm<TaskFormSchema>();
+  const [isDescriptionEditing, setIsDescriptionEditing] = useState(false);
   const router = useRouter();
-  const token = useAuthStore((state) => state.token);
-  const mutation = useMutation({
-    mutationFn: (data: TaskFormData) => createTask(data, token ?? ''),
-    onSuccess: () => {
-      // Handle successful login
-      router.push('/personal');
-    },
-    onError: () => {
-      // Handle error case
-    },
-  });
-  const onSubmit = (data: TaskFormData) => {
-    mutation.mutate(data);
+  const mutation = useCreateTask();
+  const onSubmit = (data: TaskFormSchema) => {
+    mutation.mutate(data, {
+      onSuccess: () => {
+        router.push('/personal');
+      }
+    });
   };
   return (
     <form
@@ -102,35 +42,31 @@ export const TaskForm: FC = function () {
       <div className="space-y-2">
         <Input
           {...register('title')}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
           className="text-3xl font-bold"
         />
       </div>
 
       <div className="space-y-2">
         <Label>Description</Label>
-        {isEditing ? (
+        {isDescriptionEditing ? (
           <Textarea
             {...register('description')}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
             rows={10}
           />
         ) : (
-          <div className="prose max-w-none" onClick={() => setIsEditing(true)}>
-            <ReactMarkdown>{description}</ReactMarkdown>
+          <div className="prose max-w-none" onClick={() => setIsDescriptionEditing(true)}>
+            <ReactMarkdown>{watch('description')}</ReactMarkdown>
           </div>
         )}
-        <Button type="button" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Save' : 'Edit'}
+        <Button type="button" onClick={() => setIsDescriptionEditing(!isDescriptionEditing)}>
+          {isDescriptionEditing ? 'Save' : 'Edit'}
         </Button>
       </div>
 
       <div className="space-y-2">
         <Label>Assignee</Label>
         <Combobox
-          {...register('attendant', { value: assignee.value })}
+          {...register('attendant_id')}
           items={assignees}
           selectedItem={assignee}
           onSelectedItemChange={(i) => {

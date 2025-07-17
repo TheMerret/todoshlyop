@@ -12,12 +12,13 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
-import { SERVER_IP } from '@/app/config';
+import { useRegister } from '@/queries/auth/hooks';
+import { isAxiosError } from 'axios';
+import {
+  HTTPRegisterValidationError,
+} from '@/queries/api.schemas';
 
 interface SignUpFormData {
   email: string;
@@ -26,38 +27,30 @@ interface SignUpFormData {
   repeat_password: string;
 }
 
-interface SignUpResponse {
-  access_token: string;
-  token_type: string;
-}
-
-async function signUpRequest(data: SignUpFormData): Promise<SignUpResponse> {
-  const params = new URLSearchParams();
-  params.append('email', data.email);
-  params.append('username', data.username);
-  params.append('password', data.password);
-  params.append('repeat_password', data.repeat_password);
-  const response = await axios.post(`${SERVER_IP}/auth/register?`, params);
-  return response.data;
-}
-
 export function SignUpForm() {
-  const { register, handleSubmit } = useForm<SignUpFormData>();
-  const [, setError] = useState('');
+  // P%ssword1234
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<SignUpFormData>();
   const router = useRouter();
-  const mutation = useMutation({
-    mutationFn: signUpRequest,
-    onSuccess: () => {
-      // Handle successful login
-      router.push('/login');
-    },
-    onError: () => {
-      // Handle error case
-      setError('Invalid login credentials');
-    },
-  });
+  const mutation = useRegister();
   const onSubmit = (data: SignUpFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(data, {
+      onSuccess: () => {
+        // Handle successful login
+        router.push('/home');
+      },
+      onError: (error) => {
+        if (isAxiosError<HTTPRegisterValidationError>(error)) {
+          setError('root.serverError', {
+            message: error.response?.data.detail,
+          });
+        }
+      },
+    });
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -102,6 +95,11 @@ export function SignUpForm() {
             <Button type="submit" className="w-full">
               Создать аккаунт
             </Button>
+            {errors.root?.serverError?.message !== undefined && (
+              <p className="text-rose-600">
+                {errors.root.serverError.message}
+              </p>
+            )}
           </div>
           <div className="mt-4 text-center text-sm">
             Уже есть аккаунт?{' '}

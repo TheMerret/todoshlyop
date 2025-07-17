@@ -12,51 +12,48 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
-import { useState } from 'react';
-import { useAuthStore } from '@/store';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { SERVER_IP } from '@/app/config';
+import { useLogin } from '@/queries/auth/hooks';
+import { AuthResponse, HTTPRegisterValidationError } from '@/queries/api.schemas';
+import { queryKeys } from '@/queries/keys';
+import { useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 
 interface LoginFormData {
   username: string;
   password: string;
 }
 
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-}
-
-async function loginRequest(data: LoginFormData): Promise<LoginResponse> {
-  const params = new URLSearchParams();
-  params.append('username', data.username);
-  params.append('password', data.password);
-  const response = await axios.post(`${SERVER_IP}/auth/login?`, params);
-  return response.data;
-}
-
 export function LoginForm() {
-  const { register, handleSubmit } = useForm<LoginFormData>();
-  const [, setError] = useState('');
-  const setToken = useAuthStore((state) => state.setToken); // Zustand setter
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError
+  } = useForm<LoginFormData>();
+  const queryClient = useQueryClient();
   const router = useRouter();
-  const mutation = useMutation({
-    mutationFn: loginRequest,
-    onSuccess: (data) => {
-      // Handle successful login
-      setToken(data.access_token);
-      router.push('/home');
-    },
-    onError: () => {
-      // Handle error case
-      setError('Invalid login credentials');
-    },
-  });
+  const mutation = useLogin();
   const onSubmit = (data: LoginFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(data, {
+      onSuccess: (resp) => {
+        // Handle successful login
+        queryClient.setQueryData<AuthResponse>(
+          queryKeys.users.whoami().queryKey,
+          resp
+        );
+
+        router.push('/home');
+      },
+      onError: (error) => {
+        if (isAxiosError<HTTPRegisterValidationError>(error)) {
+          setError('root.serverError', {
+            message: error.response?.data.detail,
+          });
+        }
+      },
+    });
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -67,7 +64,7 @@ export function LoginForm() {
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="username">Email</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
               {...register('username')}
               id="username"
@@ -93,6 +90,9 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter>
+          {errors.root?.serverError?.message !== undefined && (
+            <p className="text-rose-600">{errors.root.serverError.message}</p>
+          )}
           <Button
             type="submit"
             className="w-full"
